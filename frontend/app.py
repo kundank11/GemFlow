@@ -1,9 +1,13 @@
 import streamlit as st
-import requests
 from typing import List, Dict, Optional
-import supabase_client as sb
+import uuid
+from datetime import datetime
+import sys, os
 
-BACKEND_URL = st.secrets.get("BACKEND_URL", "http://127.0.0.1:8000")
+import supabase_client as sb  
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
+from gemini_client import send_to_gemini
+
 
 st.set_page_config(page_title="GemFlow — Chat", layout="wide")
 
@@ -19,29 +23,50 @@ if "chats" not in st.session_state:
 def append_message(role: str, content: str):
     st.session_state.messages.append({"role": role, "content": content})
 
+def _get_supabase_client_for_frontend():
+    return sb._get_client()
+
 def call_backend_send(message: str):
-    payload = {
-        "message": message,
-        "chat_id": st.session_state.chat_id,
-        "user_id": st.session_state.user["id"] if st.session_state.user else None,
-    }
-    headers = {"Content-Type": "application/json"}
-    if st.session_state.user and st.session_state.user.get("access_token"):
-        headers["Authorization"] = f"Bearer {st.session_state.user['access_token']}"
-    try:
-        r = requests.post(f"{BACKEND_URL}/chat", json=payload, headers=headers, timeout=30)
-        r.raise_for_status()
-        data = r.json()
-        return data.get("reply", "[no reply]"), data.get("chat_id")
-    except Exception as e:
-        return f"[error contacting backend: {e}]", st.session_state.chat_id
+    client = _get_supabase_client_for_frontend()
+    chat_id = st.session_state.chat_id
+    user_id = st.session_state.user["id"] if st.session_state.user else None
+
+    if not chat_id:
+        chat_id = str(uuid.uuid4())
+        client.table("chats").insert({
+            "id": chat_id,
+            "user_id": user_id,
+            "title": (message or "")[:50],
+            "created_at": datetime.utcnow().isoformat()
+        }).execute()
+
+    client.table("messages").insert({
+        "chat_id": chat_id,
+        "role": "user",
+        "content": message,
+        "created_at": datetime.utcnow().isoformat()
+    }).execute()
+
+    reply = send_to_gemini(message) or "[no reply from gemini]"
+
+    client.table("messages").insert({
+        "chat_id": chat_id,
+        "role": "assistant",
+        "content": reply,
+        "created_at": datetime.utcnow().isoformat()
+    }).execute()
+
+    return reply, chat_id
 
 def load_chat_by_id(chat_id: str):
     try:
-        r = requests.get(f"{BACKEND_URL}/chat/{chat_id}", timeout=15)
-        r.raise_for_status()
-        data = r.json()
-        msgs = data.get("messages", [])
+        client = _get_supabase_client_for_frontend()
+        resp = client.table("messages") \
+            .select("role, content, created_at") \
+            .eq("chat_id", chat_id) \
+            .order("created_at", desc=False) \
+            .execute()
+        msgs = resp.data if resp.data else []
         new_msgs: List[Dict] = []
         for m in msgs:
             role = m.get("role", "GemFlow")
@@ -58,13 +83,13 @@ def fetch_user_chats():
         return []
     try:
         user_id = st.session_state.user["id"]
-        headers = {}
-        if st.session_state.user.get("access_token"):
-            headers["Authorization"] = f"Bearer {st.session_state.user['access_token']}"
-        r = requests.get(f"{BACKEND_URL}/chats", params={"user_id": user_id}, headers=headers, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-        chats = data.get("chats", [])
+        client = _get_supabase_client_for_frontend()
+        resp = client.table("chats") \
+            .select("id, title, created_at") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .execute()
+        chats = resp.data if resp.data else []
         st.session_state.chats = chats
         return chats
     except Exception:
