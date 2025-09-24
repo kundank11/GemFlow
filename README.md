@@ -5,17 +5,17 @@ It allows users to **sign up, log in, chat with AI, and save/reload chat history
 
 ---
 
-## 🌐 Live Demo
-👉 [GemFlow on Streamlit](https://gemflow.streamlit.app/)
+##  Live
+ [GemFlow on Streamlit](https://gemflow.streamlit.app/)
 
 ---
 
-## 📸 Screenshot
+## Screenshot
 ![GemFlow UI](screenshot.png)
 
 ---
 
-## ✨ Features
+## Features
 -  **Authentication** (Sign up / Log in via Supabase)
 -  **Chat with Google Gemini** (Gemini 2.5 Flash model)
 -  **Chat History** (saved per user in Supabase, reload anytime)
@@ -24,7 +24,7 @@ It allows users to **sign up, log in, chat with AI, and save/reload chat history
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 - **Frontend:** Streamlit
 - **Backend:** FastAPI
 - **Database/Auth:** Supabase
