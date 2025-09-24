@@ -20,7 +20,7 @@ It allows users to **sign up, log in, chat with AI, and save/reload chat history
 -  **Chat with Google Gemini** (Gemini 2.5 Flash model)
 -  **Chat History** (saved per user in Supabase, reload anytime)
 -  **Responsive UI** with Streamlit
--  **Deployment** on Streamlit Cloud (frontend) + Render (backend)
+-  **Deployment** on Streamlit Cloud (frontend)
 
 ---
 
