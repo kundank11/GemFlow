@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit secrets
+frontend/.streamlit/secrets.toml
+/.streamlit/secrets.toml
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+GIT
