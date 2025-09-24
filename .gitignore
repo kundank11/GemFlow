@@ -21,3 +21,5 @@ frontend/.streamlit/secrets.toml
 # Logs
 *.log
 GIT
+.env
+frontend/app.py.bak
